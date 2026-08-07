@@ -4,6 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import (
     Input,
     LSTM,
+    Bidirectional,
     Dense,
     Dropout,
 )
@@ -33,10 +34,12 @@ class ISLModel:
             name="Input"
         )
 
-        x = LSTM(
-            units=LSTM_UNITS_1,
-            return_sequences=True,
-            name="LSTM_1"
+        x = Bidirectional(
+                LSTM(
+                    units=LSTM_UNITS_1,
+                    return_sequences=True,
+                ),
+                name="BiLSTM_1",
         )(inputs)
 
         x = Dropout(
@@ -44,10 +47,12 @@ class ISLModel:
             name="Dropout_1"
         )(x)
 
-        x = LSTM(
-            units=LSTM_UNITS_2,
-            return_sequences=False,
-            name="LSTM_2"
+        x = Bidirectional(
+                LSTM(
+                    units=LSTM_UNITS_2,
+                    return_sequences=False,
+                ),
+                name="BiLSTM_2",
         )(x)
 
         x = Dropout(
@@ -75,7 +80,7 @@ class ISLModel:
         model = Model(
             inputs=inputs,
             outputs=outputs,
-            name="ISL_LSTM"
+            name="ISL_BiLSTM"
         )
 
         model.compile(
