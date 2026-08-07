@@ -1,13 +1,11 @@
 import numpy as np
 
-from tensorflow.keras.models import load_model
-
 
 class Evaluator:
 
-    def __init__(self, model_path):
+    def __init__(self, model):
 
-        self.model = load_model(model_path)
+        self.model = model
 
     def predict(self, X):
 

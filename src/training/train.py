@@ -1,5 +1,15 @@
+import random
+import numpy as np
+import tensorflow as tf
+
+random.seed(42)
+np.random.seed(42)
+tf.random.set_seed(42)
+
 from src.training.train_dataset import TrainDataset
 from src.training.model import ISLModel
+from src.evaluation.evaluator import Evaluator
+from src.evaluation.metrics import Metrics
 
 dataset = TrainDataset(
     "dataset/processed/landmarks"
@@ -93,3 +103,21 @@ print("=" * 50)
 print(f"Test Loss     : {loss:.4f}")
 print(f"Test Accuracy : {accuracy:.4f}")
 print("=" * 50)
+
+
+# ---------------- Evaluation ----------------
+
+evaluator = Evaluator(model)
+
+y_pred = evaluator.predict(X_test)
+
+metrics = Metrics("outputs")
+
+metrics.evaluate(
+    y_true=y_test,
+    y_pred=y_pred,
+    class_names=[
+        encoder.decode(i)
+        for i in range(num_classes)
+    ],
+)
