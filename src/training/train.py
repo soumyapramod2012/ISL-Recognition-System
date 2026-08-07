@@ -6,6 +6,7 @@ random.seed(42)
 np.random.seed(42)
 tf.random.set_seed(42)
 
+from src.utils.experiment_logger import ExperimentLogger
 from src.training.train_dataset import TrainDataset
 from src.training.model import ISLModel
 from src.evaluation.evaluator import Evaluator
@@ -120,4 +121,16 @@ metrics.evaluate(
         encoder.decode(i)
         for i in range(num_classes)
     ],
+)
+
+logger = ExperimentLogger(
+    config.EXPERIMENT_LOG
+)
+
+logger.log(
+    version=config.PROJECT_VERSION,
+    model_name=model.name,
+    accuracy=accuracy,
+    loss=loss,
+    parameters=model.count_params(),
 )

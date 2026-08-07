@@ -76,3 +76,6 @@ LOSS_PLOT = "saved_models/loss.png"
 TENSORBOARD_LOGS = "logs"
 
 VALIDATION_SIZE = 0.25
+
+EXPERIMENT_LOG = "outputs/experiments.csv"
+PROJECT_VERSION = "v1.1.0"
