@@ -75,6 +75,19 @@ history = trainer.train(
 )
 
 
+best_epoch = (
+    np.argmax(history.history["val_accuracy"]) + 1
+)
+
+best_val_accuracy = max(
+    history.history["val_accuracy"]
+)
+
+epochs_trained = len(
+    history.history["loss"]
+)
+
+
 TrainingUtils.save_history(
     history,
     config,
@@ -124,7 +137,8 @@ metrics.evaluate(
 )
 
 logger = ExperimentLogger(
-    config.EXPERIMENT_LOG
+    csv_path=config.EXPERIMENT_LOG,
+    experiments_dir=config.EXPERIMENTS_DIR,
 )
 
 logger.log(
@@ -133,4 +147,7 @@ logger.log(
     accuracy=accuracy,
     loss=loss,
     parameters=model.count_params(),
+    best_epoch=best_epoch,
+    best_val_accuracy=best_val_accuracy,
+    epochs_trained=epochs_trained,
 )
