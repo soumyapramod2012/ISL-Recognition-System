@@ -1,0 +1,15 @@
+tensorflow==2.21.0
+mediapipe
+
+numpy
+opencv-python
+pandas
+matplotlib
+scikit-learn
+scipy
+
+requests
+tqdm
+
+jupyter
+ipykernel
