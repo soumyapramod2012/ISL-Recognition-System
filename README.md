@@ -6,23 +6,23 @@ The project extracts body and hand landmarks from sign language videos using Med
 
 ---
 
-# 📌 Features
+# Features
 
-- 🎥 Video-based ISL recognition
-- 🤖 MediaPipe Pose + Hand landmark extraction
-- ✋ Handedness-aware landmark processing
-- 📊 Landmark sequence generation
-- 🧠 LSTM-based deep learning model
-- 📈 Training and evaluation pipeline
-- 📉 Confusion matrix generation
-- 📋 Classification report generation
-- 🧪 Dataset validation
-- 🏷 Label encoding
-- ⚙ Modular project architecture
+- Video-based ISL recognition
+- MediaPipe Pose + Hand landmark extraction
+- Handedness-aware landmark processing
+- Landmark sequence generation
+- LSTM-based deep learning model
+- Training and evaluation pipeline
+- Confusion matrix generation
+- Classification report generation
+- Dataset validation
+- Label encoding
+- Modular project architecture
 
 ---
 
-# 🏗 Project Structure
+# Project Structure
 
 ```text
 ISL-Recognition-System
@@ -56,7 +56,7 @@ ISL-Recognition-System
 
 ---
 
-# 🧠 Model Pipeline
+# Model Pipeline
 
 ```text
 Videos
@@ -84,7 +84,7 @@ Predicted ISL Word
 
 ---
 
-# 📊 Landmark Vector
+# Landmark Vector
 
 Each frame contains:
 
@@ -97,7 +97,7 @@ Each frame contains:
 
 ---
 
-# 📂 Dataset
+# Dataset
 
 Current implementation uses the **INCLUDE Dataset**.
 
@@ -119,7 +119,7 @@ Classes:
 
 ---
 
-# 🏋 Training
+# Training
 
 ```bash
 python -m src.training.train
@@ -127,7 +127,7 @@ python -m src.training.train
 
 ---
 
-# 📈 Evaluation
+# Evaluation
 
 The evaluation module automatically generates:
 
@@ -138,7 +138,7 @@ The evaluation module automatically generates:
 
 ---
 
-# 🛠 Technologies Used
+# Technologies Used
 
 - Python
 - TensorFlow
@@ -150,7 +150,7 @@ The evaluation module automatically generates:
 
 ---
 
-# 📊 Current Baseline
+# Current Baseline
 
 | Model | Accuracy |
 |--------|---------:|
@@ -163,7 +163,7 @@ Dataset:
 
 ---
 
-# 🚀 Future Improvements
+# Future Improvements
 
 - Bidirectional LSTM
 - Attention Mechanism
@@ -175,7 +175,7 @@ Dataset:
 
 ---
 
-# 📌 Version History
+# Version History
 
 ## v1.0.0
 
@@ -190,7 +190,7 @@ Dataset:
 
 ---
 
-# 👨‍💻 Author
+# Author
 
 Soumya JS Nair
 
@@ -199,7 +199,7 @@ https://github.com/soumyapramod2012
 
 ---
 
-# ⭐ Acknowledgements
+# Acknowledgements
 
 - MediaPipe
 - TensorFlow
