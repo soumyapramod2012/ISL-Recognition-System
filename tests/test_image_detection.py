@@ -1,88 +1,88 @@
+import os
+
 import cv2
-import mediapipe as mp
+import pytest
 
 from src.preprocessing.detector import MediaPipeDetector
 
-IMAGE_PATH = r"dataset/raw/INCLUDE/Seasons/61. Summer/MVI_4565.MOV"
 
-cap = cv2.VideoCapture(IMAGE_PATH)
-
-# Skip first 30 frames
-for _ in range(30):
-    success, frame = cap.read()
-
-if not success:
-    print("Unable to read frame.")
-    exit()
-
-cap.release()
-
-if not success:
-    print("Unable to read first frame.")
-    exit()
-
-cv2.imshow("First Frame", frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-'''frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-mp_image = mp.Image(
-    image_format=mp.ImageFormat.SRGB,
-    data=frame_rgb
-)'''
-
-saved_frame = cv2.imread("frame30.jpg")
-
-# Increase contrast
-saved_frame = cv2.convertScaleAbs(
-    saved_frame,
-    alpha=1.8,
-    beta=20
+VIDEO_PATH = (
+    r"dataset/raw/INCLUDE/Seasons/"
+    r"61. Summer/MVI_4565.MOV"
 )
 
-cv2.imshow("Enhanced", saved_frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
-saved_frame_rgb = cv2.cvtColor(saved_frame, cv2.COLOR_BGR2RGB)
+def test_image_detection_pipeline():
 
-mp_image = mp.Image(
-    image_format=mp.ImageFormat.SRGB,
-    data=saved_frame_rgb
-)
+    if not os.path.exists(VIDEO_PATH):
 
-detector = MediaPipeDetector()
+        pytest.skip(
+            f"Test video not found: {VIDEO_PATH}"
+        )
 
-print("Image created successfully.")
-print(mp_image)
+    cap = cv2.VideoCapture(
+        VIDEO_PATH
+    )
 
-'''print("Frame shape:", frame.shape)
-print("Frame dtype:", frame.dtype)'''
+    assert cap.isOpened(), (
+        f"Unable to open video: {VIDEO_PATH}"
+    )
 
-cv2.imwrite("frame30.jpg", frame)
-print("Frame saved as frame30.jpg")
+    frame = None
 
-'''face_result = detector.face.detect(mp_image)
+    try:
 
-print("Face result:", face_result)
-print("Face landmarks:", face_result.face_landmarks)
-print("Face blendshapes:", face_result.face_blendshapes)
-print("Facial transformation matrices:", face_result.facial_transformation_matrixes)'''
+        # Skip first 30 frames
 
-'''pose_result = detector.pose.detect(mp_image)
+        for _ in range(30):
 
-print("Number of poses:", len(pose_result.pose_landmarks))
+            success, frame = cap.read()
 
-if len(pose_result.pose_landmarks) > 0:
-    print("Pose landmarks:", len(pose_result.pose_landmarks[0]))'''
+            if not success:
+                break
 
-hand_result = detector.hand.detect(mp_image)
+        assert success, (
+            "Unable to read frame 30 from video"
+        )
 
-print("Number of hands:", len(hand_result.hand_landmarks))
+        assert frame is not None
 
-if len(hand_result.hand_landmarks) > 0:
-    for i, hand in enumerate(hand_result.hand_landmarks):
-        print(f"Hand {i+1} landmarks:", len(hand))
+        assert frame.size > 0
 
-detector.close()
+        # Convert frame to RGB
+
+        frame_rgb = cv2.cvtColor(
+            frame,
+            cv2.COLOR_BGR2RGB,
+        )
+
+        # Create MediaPipe image
+
+        import mediapipe as mp
+
+        mp_image = mp.Image(
+            image_format=mp.ImageFormat.SRGB,
+            data=frame_rgb,
+        )
+
+        assert mp_image is not None
+
+        # Create detector
+
+        detector = MediaPipeDetector()
+
+        try:
+
+            hand_result = detector.hand.detect(
+                mp_image
+            )
+
+            assert hand_result is not None
+
+        finally:
+
+            detector.close()
+
+    finally:
+
+        cap.release()

@@ -1,16 +1,20 @@
 import random
 import numpy as np
 import tensorflow as tf
+import src.training.config as config
 
-random.seed(42)
-np.random.seed(42)
-tf.random.set_seed(42)
+random.seed(config.RANDOM_SEED)
+np.random.seed(config.RANDOM_SEED)
+tf.random.set_seed(config.RANDOM_SEED)
 
 from src.utils.experiment_logger import ExperimentLogger
 from src.training.train_dataset import TrainDataset
 from src.training.model import ISLModel
 from src.evaluation.evaluator import Evaluator
 from src.evaluation.metrics import Metrics
+from src.utils.experiment_manager import ExperimentManager
+from src.utils.training_utils import TrainingUtils
+
 
 dataset = TrainDataset(
     "dataset/processed/landmarks"
@@ -33,9 +37,6 @@ num_classes = len(encoder.label_to_index)
 model = ISLModel().build(num_classes)
 
 
-from src.utils.experiment_manager import ExperimentManager
-from src.utils.training_utils import TrainingUtils
-import src.training.config as config
 
 manager = ExperimentManager(config)
 

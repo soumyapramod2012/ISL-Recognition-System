@@ -17,6 +17,7 @@ LANDMARK_SIZE = 258
 
 TEST_SIZE = 0.20
 RANDOM_STATE = 42
+RANDOM_SEED = 42
 
 # ==========================
 # Model Architecture
