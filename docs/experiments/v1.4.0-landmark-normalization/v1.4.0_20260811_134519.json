@@ -1,0 +1,11 @@
+{
+    "timestamp": "2026-08-11 13:45:19",
+    "version": "v1.4.0",
+    "model": "ISL_BiLSTM",
+    "accuracy": 0.8824,
+    "loss": 0.5156,
+    "parameters": 569286,
+    "best_epoch": 26,
+    "best_validation_accuracy": 0.8824,
+    "epochs_trained": 36
+}
