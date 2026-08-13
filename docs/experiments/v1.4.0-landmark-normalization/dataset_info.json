@@ -1,0 +1,8 @@
+{
+    "classes": 6,
+    "train_samples": 51,
+    "validation_samples": 17,
+    "test_samples": 17,
+    "sequence_length": 60,
+    "feature_size": 258
+}

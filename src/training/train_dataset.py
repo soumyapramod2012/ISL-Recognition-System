@@ -1,4 +1,5 @@
 import numpy as np
+from src.training.landmark_normalizer import LandmarkNormalizer
 
 from sklearn.model_selection import train_test_split
 
@@ -22,6 +23,7 @@ class TrainDataset:
         self.loader = DatasetLoader(dataset_path)
         self.encoder = LabelEncoder()
         self.generator = SequenceGenerator()
+        self.normalizer = LandmarkNormalizer()
         '''self.augmenter = LandmarkAugmenter(
             noise_std=0.005,
         )'''
@@ -85,6 +87,10 @@ class TrainDataset:
                         )
                     )
                     continue
+
+                landmarks = self.normalizer.normalize(
+                    landmarks
+                )
 
                 sequence = self.generator.generate(
                     landmarks

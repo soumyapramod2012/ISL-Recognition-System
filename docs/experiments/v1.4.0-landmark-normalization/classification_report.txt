@@ -1,0 +1,12 @@
+              precision    recall  f1-score   support
+
+  61. Summer     1.0000    1.0000    1.0000         3
+  62. Spring     0.6667    1.0000    0.8000         2
+  63. Winter     1.0000    0.3333    0.5000         3
+    64. Fall     1.0000    1.0000    1.0000         3
+  65. Season     1.0000    1.0000    1.0000         3
+ Ex. Monsoon     0.7500    1.0000    0.8571         3
+
+    accuracy                         0.8824        17
+   macro avg     0.9028    0.8889    0.8595        17
+weighted avg     0.9167    0.8824    0.8630        17

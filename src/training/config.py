@@ -79,7 +79,7 @@ TENSORBOARD_LOGS = "logs"
 VALIDATION_SIZE = 0.25
 
 EXPERIMENT_LOG = "outputs/experiments.csv"
-PROJECT_VERSION = "v1.1.0"
+PROJECT_VERSION = "v1.4.0"
 
 EXPERIMENTS_DIR = "outputs/experiments"
 
