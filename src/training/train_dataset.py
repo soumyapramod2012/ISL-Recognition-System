@@ -1,5 +1,8 @@
 import numpy as np
 from src.training.landmark_normalizer import LandmarkNormalizer
+from src.training.hand_landmark_interpolator import (
+    HandLandmarkInterpolator
+)
 
 from sklearn.model_selection import train_test_split
 
@@ -24,6 +27,10 @@ class TrainDataset:
         self.encoder = LabelEncoder()
         self.generator = SequenceGenerator()
         self.normalizer = LandmarkNormalizer()
+        self.interpolator = HandLandmarkInterpolator(
+            max_gap=5
+        )
+        
         '''self.augmenter = LandmarkAugmenter(
             noise_std=0.005,
         )'''
@@ -87,6 +94,10 @@ class TrainDataset:
                         )
                     )
                     continue
+
+                landmarks = self.interpolator.interpolate(
+                    landmarks
+                )
 
                 landmarks = self.normalizer.normalize(
                     landmarks
