@@ -1,0 +1,7 @@
+,61. Summer,62. Spring,63. Winter,64. Fall,65. Season,Ex. Monsoon
+61. Summer,3,0,0,0,0,0
+62. Spring,0,2,0,0,0,0
+63. Winter,0,0,3,0,0,0
+64. Fall,0,0,0,3,0,0
+65. Season,0,0,0,0,3,0
+Ex. Monsoon,0,0,0,0,0,3
