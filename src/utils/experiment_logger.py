@@ -10,7 +10,7 @@ class ExperimentLogger:
     def __init__(
             self,
             csv_path,
-            experiments_dir, 
+            experiments_dir,
         ):
 
         self.filepath = csv_path
@@ -39,7 +39,9 @@ class ExperimentLogger:
                     "Accuracy",
                     "Loss",
                     "Parameters",
-                    "Best Epoch",
+                    "Best Val Loss Epoch",
+                    "Best Validation Loss",
+                    "Best Val Accuracy Epoch",
                     "Best Validation Accuracy",
                     "Epochs Trained",
                 ])
@@ -51,10 +53,13 @@ class ExperimentLogger:
         accuracy,
         loss,
         parameters,
-        best_epoch,
+        best_val_loss_epoch,
+        best_val_loss,
+        best_val_accuracy_epoch,
         best_val_accuracy,
         epochs_trained,
     ):
+
         timestamp = datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
@@ -77,7 +82,9 @@ class ExperimentLogger:
                 f"{accuracy:.4f}",
                 f"{loss:.4f}",
                 parameters,
-                best_epoch,
+                best_val_loss_epoch,
+                f"{best_val_loss:.4f}",
+                best_val_accuracy_epoch,
                 f"{best_val_accuracy:.4f}",
                 epochs_trained,
             ])
@@ -91,9 +98,26 @@ class ExperimentLogger:
             "accuracy": float(accuracy),
             "loss": float(loss),
             "parameters": int(parameters),
-            "best_epoch": int(best_epoch),
-            "best_validation_accuracy": float(best_val_accuracy),
-            "epochs_trained": int(epochs_trained),
+
+            "best_val_loss_epoch": int(
+                best_val_loss_epoch
+            ),
+
+            "best_validation_loss": float(
+                best_val_loss
+            ),
+
+            "best_val_accuracy_epoch": int(
+                best_val_accuracy_epoch
+            ),
+
+            "best_validation_accuracy": float(
+                best_val_accuracy
+            ),
+
+            "epochs_trained": int(
+                epochs_trained
+            ),
         }
 
         self.experiments_dir.mkdir(
@@ -101,7 +125,9 @@ class ExperimentLogger:
             exist_ok=True,
         )
 
-        safe_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_timestamp = datetime.now().strftime(
+            "%Y%m%d_%H%M%S"
+        )
 
         filename = self.experiments_dir / (
             f"{version}_{safe_timestamp}.json"
@@ -112,6 +138,7 @@ class ExperimentLogger:
             "w",
             encoding="utf-8",
         ) as file:
+
             json.dump(
                 experiment,
                 file,

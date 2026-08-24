@@ -76,7 +76,15 @@ history = trainer.train(
 )
 
 
-best_epoch = (
+best_val_loss_epoch = (
+    np.argmin(history.history["val_loss"]) + 1
+)
+
+best_val_loss = min(
+    history.history["val_loss"]
+)
+
+best_val_accuracy_epoch = (
     np.argmax(history.history["val_accuracy"]) + 1
 )
 
@@ -148,7 +156,9 @@ logger.log(
     accuracy=accuracy,
     loss=loss,
     parameters=model.count_params(),
-    best_epoch=best_epoch,
+    best_val_loss_epoch=best_val_loss_epoch,
+    best_val_loss=best_val_loss,
+    best_val_accuracy_epoch=best_val_accuracy_epoch,
     best_val_accuracy=best_val_accuracy,
     epochs_trained=epochs_trained,
 )

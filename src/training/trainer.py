@@ -34,9 +34,9 @@ class Trainer:
 
                 filepath=self.config.BEST_MODEL,
 
-                monitor="val_accuracy",
+                monitor="val_loss",
 
-                mode="max",
+                mode="min",
 
                 save_best_only=True,
 
