@@ -547,13 +547,13 @@ def _adaptive_interpolate_hand(
                 <= magnitude_ratio_max
             )
 
-            print(
+            '''print(
                 f"[v1.7 diagnostic] "
                 f"gap={gap_length} "
                 f"cosine={cosine_similarity:.4f} "
                 f"ratio={magnitude_ratio:.4f}"
                 f"accepted={should_interpolate}"
-            )
+            )'''
 
         if not should_interpolate:
             continue
@@ -923,7 +923,7 @@ def _windowed_adaptive_interpolate_hand(
             >= landmark_consistency_threshold
         )
 
-        print(
+        '''print(
             f"[v1.7.1 diagnostic] "
             f"gap={gap_length} "
             f"consistent="
@@ -932,7 +932,7 @@ def _windowed_adaptive_interpolate_hand(
             f"{consistency_ratio:.4f} "
             f"accepted="
             f"{should_interpolate}"
-        )
+        )'''
 
         if not should_interpolate:
             continue
