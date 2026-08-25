@@ -1,4 +1,5 @@
 from pathlib import Path
+import pandas as pd
 
 import numpy as np
 import tensorflow as tf
@@ -2017,6 +2018,167 @@ def summarize_multi_trial_results(results):
     print()
 
 
+def export_strategy_summary(results):
+    """
+    Export multi-trial strategy results to CSV.
+
+    The exported file contains one row per
+    gap length with mean and standard deviation
+    for each recovery strategy.
+    """
+
+    output_dir = Path(
+        "docs/experiments/v1.7.0-landmark-strategy"
+    )
+
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    gap_lengths = sorted(
+        set(
+            result["gap_length"]
+            for result in results
+        )
+    )
+
+    rows = []
+
+    for gap_length in gap_lengths:
+
+        gap_results = [
+            result
+            for result in results
+            if result["gap_length"] == gap_length
+        ]
+
+        none_values = np.asarray(
+            [
+                result["none_accuracy"]
+                for result in gap_results
+            ],
+            dtype=np.float32,
+        )
+
+        linear_values = np.asarray(
+            [
+                result["linear_accuracy"]
+                for result in gap_results
+            ],
+            dtype=np.float32,
+        )
+
+        v17_values = np.asarray(
+            [
+                result["v17_accuracy"]
+                for result in gap_results
+            ],
+            dtype=np.float32,
+        )
+
+        v171_values = np.asarray(
+            [
+                result["v171_accuracy"]
+                for result in gap_results
+            ],
+            dtype=np.float32,
+        )
+
+        rows.append(
+            {
+                "gap_length": gap_length,
+
+                "none_mean": np.mean(
+                    none_values
+                ),
+                "none_std": np.std(
+                    none_values
+                ),
+
+                "linear_mean": np.mean(
+                    linear_values
+                ),
+                "linear_std": np.std(
+                    linear_values
+                ),
+
+                "v17_mean": np.mean(
+                    v17_values
+                ),
+                "v17_std": np.std(
+                    v17_values
+                ),
+
+                "v171_mean": np.mean(
+                    v171_values
+                ),
+                "v171_std": np.std(
+                    v171_values
+                ),
+
+                "linear_improvement":
+                    np.mean(linear_values)
+                    - np.mean(none_values),
+
+                "v17_improvement":
+                    np.mean(v17_values)
+                    - np.mean(none_values),
+
+                "v171_improvement":
+                    np.mean(v171_values)
+                    - np.mean(none_values),
+
+                "v17_vs_linear":
+                    np.mean(v17_values)
+                    - np.mean(linear_values),
+
+                "v171_vs_linear":
+                    np.mean(v171_values)
+                    - np.mean(linear_values),
+
+                "linear_repair_mean":
+                    np.mean(
+                        [
+                            result["linear_repaired"]
+                            for result in gap_results
+                        ]
+                    ),
+
+                "v17_repair_mean":
+                    np.mean(
+                        [
+                            result["v17_repaired"]
+                            for result in gap_results
+                        ]
+                    ),
+
+                "v171_repair_mean":
+                    np.mean(
+                        [
+                            result["v171_repaired"]
+                            for result in gap_results
+                        ]
+                    ),
+            }
+        )
+
+    output_path = (
+        output_dir / "strategy_summary.csv"
+    )
+
+    pd.DataFrame(rows).to_csv(
+        output_path,
+        index=False,
+    )
+
+    print()
+    print(
+        f"Saved strategy summary: "
+        f"{output_path}"
+    )
+
+
 # ============================================================
 # Per-sample robustness analysis
 # ============================================================
@@ -2039,6 +2201,17 @@ def run_per_sample_analysis(
         v1.7
         v1.7.1
     """
+
+    output_dir = Path(
+        "docs/experiments/v1.7.0-landmark-strategy"
+    )
+
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    rows = []
 
     print()
     print("=" * 80)
@@ -2154,6 +2327,66 @@ def run_per_sample_analysis(
 
         for index, sample in enumerate(samples):
 
+            true_label = y[index]
+
+            rows.append(
+                {
+                    "gap_length": gap_length,
+                    "seed": seed,
+                    "sample_index": index + 1,
+                    "file": sample["path"],
+                    "true_label": encoder.classes[true_label],
+
+                    "none_prediction":
+                        encoder.classes[
+                            strategy_results["none"]
+                            ["predictions"][index]
+                        ],
+
+                    "linear_prediction":
+                        encoder.classes[
+                            strategy_results["linear"]
+                            ["predictions"][index]
+                        ],
+
+                    "v17_prediction":
+                        encoder.classes[
+                            strategy_results["v1.7"]
+                            ["predictions"][index]
+                        ],
+
+                    "v171_prediction":
+                        encoder.classes[
+                            strategy_results["v1.7.1"]
+                            ["predictions"][index]
+                        ],
+
+                    "none_correct":
+                        bool(
+                            strategy_results["none"]
+                            ["correct"][index]
+                        ),
+
+                    "linear_correct":
+                        bool(
+                            strategy_results["linear"]
+                            ["correct"][index]
+                        ),
+
+                    "v17_correct":
+                        bool(
+                            strategy_results["v1.7"]
+                            ["correct"][index]
+                        ),
+
+                    "v171_correct":
+                        bool(
+                            strategy_results["v1.7.1"]
+                            ["correct"][index]
+                        ),
+                }
+            )
+
             none_prediction = (
                 strategy_results["none"]
                 ["predictions"][index]
@@ -2187,7 +2420,7 @@ def run_per_sample_analysis(
 
             changed_count += 1
 
-            true_label = y[index]
+            #true_label = y[index]
 
             none_correct = (
                 none_prediction == true_label
@@ -2292,6 +2525,26 @@ def run_per_sample_analysis(
             f"None -> v1.7.1 harmed                : "
             f"{harmed_count}"
         )
+
+
+    # --------------------------------------------------------
+    # Export per-sample analysis
+    # --------------------------------------------------------
+
+    output_path = (
+        output_dir / "per_sample_analysis.csv"
+    )
+
+    pd.DataFrame(rows).to_csv(
+        output_path,
+        index=False,
+    )
+
+    print()
+    print(
+        f"Saved per-sample analysis: "
+        f"{output_path}"
+    )       
 
 
 # ============================================================
@@ -2413,6 +2666,10 @@ def main():
  
 
     summarize_multi_trial_results(
+        results
+    )
+
+    export_strategy_summary(
         results
     )
 
