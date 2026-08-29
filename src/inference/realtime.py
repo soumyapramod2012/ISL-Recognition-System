@@ -1,4 +1,5 @@
 import cv2
+import time
 import json
 import numpy as np
 import tensorflow as tf
@@ -21,6 +22,7 @@ LABEL_MAPPING_PATH = Path("outputs/label_mapping.json")
 SEQUENCE_LENGTH = 60
 CONFIDENCE_THRESHOLD = 0.50
 RECOVERY_STRATEGY = "v1.7.1"
+PREDICTION_INTERVAL = 3
 
 
 def load_labels():
@@ -130,11 +132,24 @@ def main():
     prediction = "Waiting..."
     confidence = 0.0
 
+    frame_count = 0
+    prediction_count = 0
+    predictions_this_second = 0
+    prediction_frame_counter = 0
+
+    fps = 0.0
+    prediction_rate = 0.0
+    inference_time_ms = 0.0
+
+    fps_start_time = time.perf_counter()
+
     try:
 
         while True:
 
             success, frame = cap.read()
+
+            frame_count += 1
 
             if not success:
                 print(
@@ -162,11 +177,13 @@ def main():
                 landmarks
             )
 
+            prediction_frame_counter += 1
+
             # --------------------------------------------------
             # Predict when enough frames are available
             # --------------------------------------------------
 
-            if len(frame_buffer) == SEQUENCE_LENGTH:
+            if((len(frame_buffer) == SEQUENCE_LENGTH) and (prediction_frame_counter >= PREDICTION_INTERVAL)):
 
                 raw_sequence = np.asarray(
                     frame_buffer,
@@ -208,11 +225,21 @@ def main():
                     axis=0,
                 )
 
+                inference_start = time.perf_counter()
+
                 # Model prediction.
                 probabilities = model.predict(
                     X,
                     verbose=0,
                 )[0]
+
+                inference_time_ms = (
+                    time.perf_counter() - inference_start
+                ) * 1000
+
+                prediction_count += 1
+                predictions_this_second += 1
+                prediction_frame_counter = 0
 
                 predicted_index = int(
                     np.argmax(probabilities)
@@ -236,6 +263,20 @@ def main():
                         "Uncertain"
                     )
 
+
+            # --------------------------------------------------
+            # Performance metrics
+            # --------------------------------------------------
+
+            elapsed = time.perf_counter() - fps_start_time
+
+            if elapsed >= 1.0:
+                fps = frame_count / elapsed
+                prediction_rate = predictions_this_second / elapsed
+
+                frame_count = 0
+                predictions_this_second = 0
+                fps_start_time = time.perf_counter()
             # --------------------------------------------------
             # Display
             # --------------------------------------------------
@@ -243,7 +284,7 @@ def main():
             cv2.rectangle(
                 frame,
                 (10, 10),
-                (630, 100),
+                (630, 215),
                 (0, 0, 0),
                 -1,
             )
@@ -272,6 +313,36 @@ def main():
                 frame,
                 f"Recovery: {RECOVERY_STRATEGY}",
                 (20, 115),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+
+            cv2.putText(
+                frame,
+                f"FPS: {fps:.1f}",
+                (20, 145),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+
+            cv2.putText(
+                frame,
+                f"Inference: {inference_time_ms:.1f} ms",
+                (20, 175),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+
+            cv2.putText(
+                frame,
+                f"Predictions/sec: {prediction_rate:.1f}",
+                (20, 205),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 (255, 255, 255),
