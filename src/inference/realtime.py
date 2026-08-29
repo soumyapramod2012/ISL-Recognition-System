@@ -79,6 +79,22 @@ def normalize_sequence(sequence):
     return normalized
 
 
+def hand_detected(landmarks):
+    """
+    Check whether at least one hand was detected.
+
+    The landmark extractor represents missing hand landmarks
+    using zeros in the final 126 features.
+    """
+
+    hand_landmarks = landmarks[132:258]
+
+    return not np.allclose(
+        hand_landmarks,
+        0.0,
+    )
+
+
 def main():
 
     print("=" * 70)
@@ -173,9 +189,17 @@ def main():
                     "Expected (258,)."
                 )
 
+            has_hand = hand_detected(
+                landmarks
+            )
+
             frame_buffer.append(
                 landmarks
             )
+
+            if not has_hand:
+                prediction = "Uncertain"
+                confidence = 0.0
 
             prediction_frame_counter += 1
 
@@ -183,7 +207,11 @@ def main():
             # Predict when enough frames are available
             # --------------------------------------------------
 
-            if((len(frame_buffer) == SEQUENCE_LENGTH) and (prediction_frame_counter >= PREDICTION_INTERVAL)):
+            if(
+                len(frame_buffer) == SEQUENCE_LENGTH
+                and prediction_frame_counter >= PREDICTION_INTERVAL
+                and has_hand
+            ):
 
                 raw_sequence = np.asarray(
                     frame_buffer,
@@ -277,6 +305,7 @@ def main():
                 frame_count = 0
                 predictions_this_second = 0
                 fps_start_time = time.perf_counter()
+
             # --------------------------------------------------
             # Display
             # --------------------------------------------------
