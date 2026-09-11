@@ -1,27 +1,25 @@
+import json
+from pathlib import Path
+
 import numpy as np
+
 from src.training.landmark_normalizer import LandmarkNormalizer
 from src.training.hand_landmark_interpolator import (
-    HandLandmarkInterpolator
+    HandLandmarkInterpolator,
 )
 
-from sklearn.model_selection import train_test_split
-
-from src.training.config import (
-    TEST_SIZE,
-    VALIDATION_SIZE,
-    RANDOM_STATE,
-    LANDMARK_SIZE,
-)
+from src.training.config import LANDMARK_SIZE
 
 from src.training.dataset_loader import DatasetLoader
 from src.training.label_encoder import LabelEncoder
 from src.training.sequence_generator import SequenceGenerator
-#from src.augmentation.landmark_augmenter import LandmarkAugmenter
 
 
 class TrainDataset:
 
     def __init__(self, dataset_path):
+
+        self.dataset_path = Path(dataset_path)
 
         self.loader = DatasetLoader(dataset_path)
         self.encoder = LabelEncoder()
@@ -30,40 +28,76 @@ class TrainDataset:
         self.interpolator = HandLandmarkInterpolator(
             max_gap=5
         )
-        
-        '''self.augmenter = LandmarkAugmenter(
-            noise_std=0.005,
-        )'''
 
+        self.split_file = Path("dataset/split.json")
 
-    def build(self):
+    def _load_split(self):
 
-        samples = self.loader.load()
+        if not self.split_file.exists():
+            raise FileNotFoundError(
+                f"Split file not found: {self.split_file}"
+            )
 
-        self.encoder.fit(samples)
+        with open(
+            self.split_file,
+            "r",
+            encoding="utf-8",
+        ) as f:
+
+            split = json.load(f)
+
+        required = ["train", "validation", "test"]
+
+        for key in required:
+
+            if key not in split:
+                raise ValueError(
+                    f"Missing split: {key}"
+                )
+
+        return split
+
+    def _prepare_samples(self, paths):
 
         X = []
         y = []
 
         invalid_files = []
 
-        for sample in samples:
+        for path in paths:
+
+            path = Path(path)
 
             try:
 
-                landmarks = np.load(sample["path"])
+                if not path.exists():
+                    invalid_files.append(
+                        (str(path), "File not found")
+                    )
+                    continue
+
+                label = path.parent.name
+
+                landmarks = np.load(path)
 
                 if landmarks.ndim != 2:
                     invalid_files.append(
-                        (sample["path"], "Not a 2D array")
+                        (
+                            str(path),
+                            "Not a 2D array",
+                        )
                     )
                     continue
 
                 if landmarks.shape[1] != LANDMARK_SIZE:
                     invalid_files.append(
                         (
-                            sample["path"],
-                            f"Expected {LANDMARK_SIZE} features, found {landmarks.shape[1]}"
+                            str(path),
+                            (
+                                f"Expected {LANDMARK_SIZE} "
+                                f"features, found "
+                                f"{landmarks.shape[1]}"
+                            ),
                         )
                     )
                     continue
@@ -71,8 +105,8 @@ class TrainDataset:
                 if landmarks.shape[0] == 0:
                     invalid_files.append(
                         (
-                            sample["path"],
-                            "Empty sequence"
+                            str(path),
+                            "Empty sequence",
                         )
                     )
                     continue
@@ -80,8 +114,8 @@ class TrainDataset:
                 if np.isnan(landmarks).any():
                     invalid_files.append(
                         (
-                            sample["path"],
-                            "Contains NaN values"
+                            str(path),
+                            "Contains NaN values",
                         )
                     )
                     continue
@@ -89,8 +123,8 @@ class TrainDataset:
                 if np.isinf(landmarks).any():
                     invalid_files.append(
                         (
-                            sample["path"],
-                            "Contains Infinite values"
+                            str(path),
+                            "Contains Infinite values",
                         )
                     )
                     continue
@@ -110,70 +144,63 @@ class TrainDataset:
                 X.append(sequence)
 
                 y.append(
-                    self.encoder.encode(sample["label"])
+                    self.encoder.encode(label)
                 )
 
             except Exception as e:
 
                 invalid_files.append(
                     (
-                        sample["path"],
-                        str(e)
+                        str(path),
+                        str(e),
                     )
                 )
 
-        X = np.array(X, dtype=np.float32)
-        y = np.array(y, dtype=np.int32)
-
-        zero_frames = np.all(
-            X == 0,
-            axis=2,
-        ).sum()
-
-        print(
-            f"Zero Frames          : {zero_frames}"
+        return (
+            np.array(X, dtype=np.float32),
+            np.array(y, dtype=np.int32),
+            invalid_files,
         )
 
-        # First split: Train + Test
+    def build(self):
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=TEST_SIZE,
-            random_state=RANDOM_STATE,
-            stratify=y,
+        split = self._load_split()
+
+        # Collect every sample from the split file
+        all_paths = (
+            split["train"]
+            + split["validation"]
+            + split["test"]
         )
 
-        # Second split: Train + Validation
+        # Create samples for LabelEncoder
+        samples = [
+            {
+                "label": Path(path).parent.name,
+                "path": Path(path),
+            }
+            for path in all_paths
+        ]
 
-        X_train, X_val, y_train, y_val = train_test_split(
-        X_train,
-        y_train,
-        test_size=VALIDATION_SIZE,
-        random_state=RANDOM_STATE,
-        stratify=y_train,
+        self.encoder.fit(samples)
+
+        X_train, y_train, invalid_train = (
+            self._prepare_samples(split["train"])
         )
 
-        #original_train_samples = len(X_train)
+        X_val, y_val, invalid_val = (
+            self._prepare_samples(split["validation"])
+        )
 
-        '''augmented_X = []
-        augmented_y = []
+        X_test, y_test, invalid_test = (
+            self._prepare_samples(split["test"])
+        )
 
-        for sequence, label in zip(X_train, y_train):
-            augmented_X.append(sequence)
-            augmented_y.append(label)
-
-            augmented_sequence = self.augmenter.augment(sequence)
-
-            augmented_X.append(augmented_sequence)
-            augmented_y.append(label)
-
-        X_train = np.array(augmented_X, dtype=np.float32)
-        y_train = np.array(augmented_y, dtype=np.int32)'''
-
-        # Augmentation disabled (Baseline)
-        X_train = np.array(X_train, dtype=np.float32)
-        y_train = np.array(y_train, dtype=np.int32)
+        invalid_files = (
+            invalid_train
+            + invalid_val
+            + invalid_test
+        )
 
         print()
         print("Dataset Shapes")
@@ -186,17 +213,52 @@ class TrainDataset:
         print("=" * 50)
         print("DATASET SUMMARY")
         print("=" * 50)
-        print(f"Classes                 : {len(self.encoder.label_to_index)}")
-        print(f"Videos Found            : {len(samples)}")
-        print(f"Valid Samples           : {len(X)}")
-        print(f"Invalid Samples         : {len(invalid_files)}")
-        print(f"Sequence Length         : {X.shape[1]}")
-        print(f"Feature Size            : {X.shape[2]}")
-        #print(f"Original Train Samples  : {original_train_samples}")
-        #print(f"Augmented Train Samples : {len(X_train)}")
-        print(f"Train Samples           : {len(X_train)}")
-        print(f"Validation Samples      : {len(X_val)}")
-        print(f"Test Samples            : {len(X_test)}")
+
+        print(
+            f"Classes                 : "
+            f"{len(self.encoder.label_to_index)}"
+        )
+
+        print(
+            f"Videos in Split         : "
+            f"{len(all_paths)}"
+        )
+
+        print(
+            f"Valid Samples           : "
+            f"{len(X_train) + len(X_val) + len(X_test)}"
+        )
+
+        print(
+            f"Invalid Samples         : "
+            f"{len(invalid_files)}"
+        )
+
+        print(
+            f"Sequence Length         : "
+            f"{X_train.shape[1]}"
+        )
+
+        print(
+            f"Feature Size            : "
+            f"{X_train.shape[2]}"
+        )
+
+        print(
+            f"Train Samples           : "
+            f"{len(X_train)}"
+        )
+
+        print(
+            f"Validation Samples      : "
+            f"{len(X_val)}"
+        )
+
+        print(
+            f"Test Samples            : "
+            f"{len(X_test)}"
+        )
+
         print("=" * 50)
 
         if invalid_files:
@@ -211,6 +273,11 @@ class TrainDataset:
                 print("Reason :", reason)
                 print()
 
+            raise RuntimeError(
+                "Invalid files found. "
+                "Training aborted."
+            )
+
         return (
             X_train,
             X_val,
@@ -219,5 +286,4 @@ class TrainDataset:
             y_val,
             y_test,
             self.encoder,
-            )
-    
+        )
