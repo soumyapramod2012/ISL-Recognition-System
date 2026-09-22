@@ -12,7 +12,11 @@ RANDOM_STATE = 42
 
 
 def main():
-    files = sorted(DATASET_PATH.rglob("*.npy"))
+    files = sorted(
+        file
+        for file in DATASET_PATH.rglob("*.npy")
+        if file.parent.name != "Extra"
+    )
 
     if not files:
         raise RuntimeError("No landmark files found.")
