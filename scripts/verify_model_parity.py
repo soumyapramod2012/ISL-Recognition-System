@@ -6,32 +6,16 @@ import tensorflow as tf
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.training.train_dataset import TrainDataset
-
-
-ORIGINAL_MODEL = (
-    PROJECT_ROOT
-    / "saved_models"
-    / "isl_lstm_class_weighted_legacy.keras"
-)
-
 COMPATIBLE_MODEL = (
     PROJECT_ROOT
     / "saved_models"
     / "isl_lstm_class_weighted_legacy_compatible.h5"
 )
 
-SPLIT_FILE = (
+PARITY_DATA = (
     PROJECT_ROOT
-    / "dataset"
-    / "split_legacy.json"
-)
-
-DATASET = (
-    PROJECT_ROOT
-    / "dataset"
-    / "processed"
-    / "landmarks_legacy"
+    / "outputs"
+    / "parity_test_data.npz"
 )
 
 
@@ -39,50 +23,116 @@ print("=" * 70)
 print("MODEL PARITY CHECK")
 print("=" * 70)
 
-print("Loading test data...")
+# ------------------------------------------------------------
+# Check parity artifact
+# ------------------------------------------------------------
 
-dataset = TrainDataset(DATASET)
-dataset.split_file = SPLIT_FILE
+if not PARITY_DATA.exists():
+    raise FileNotFoundError(
+        f"Parity data not found: {PARITY_DATA}"
+    )
 
-(
-    X_train,
-    X_val,
-    X_test,
-    y_train,
-    y_val,
-    y_test,
-    encoder,
-) = dataset.build()
+print("Loading saved parity data...")
+
+data = np.load(PARITY_DATA)
+
+required = {
+    "X_test",
+    "y_test",
+    "original_predictions",
+}
+
+missing = required.difference(data.files)
+
+if missing:
+    raise RuntimeError(
+        f"Missing arrays in parity data: {sorted(missing)}"
+    )
+
+X_test = data["X_test"]
+y_test = data["y_test"]
+original_predictions = data["original_predictions"]
 
 print("X_test:", X_test.shape)
 print("y_test:", y_test.shape)
+print("Original predictions:", original_predictions.shape)
+
+# ------------------------------------------------------------
+# Basic validation
+# ------------------------------------------------------------
+
+if X_test.ndim != 3:
+    raise RuntimeError(
+        f"Unexpected X_test dimensions: {X_test.shape}"
+    )
+
+if X_test.shape[1:] != (60, 258):
+    raise RuntimeError(
+        f"Unexpected X_test shape: {X_test.shape}"
+    )
+
+if len(X_test) != len(y_test):
+    raise RuntimeError(
+        "X_test and y_test sample counts do not match."
+    )
+
+if original_predictions.shape[0] != len(X_test):
+    raise RuntimeError(
+        "Prediction count does not match X_test."
+    )
 
 print()
-print("Loading original Keras model...")
-original = tf.keras.models.load_model(
-    ORIGINAL_MODEL,
-    compile=False,
+print("Test samples:", len(X_test))
+print("Feature shape:", X_test.shape[1:])
+
+# ------------------------------------------------------------
+# Original model accuracy from saved predictions
+# ------------------------------------------------------------
+
+original_pred = np.argmax(
+    original_predictions,
+    axis=1,
 )
 
+original_accuracy = np.mean(
+    original_pred == y_test
+)
+
+print()
+print(
+    f"Original saved-model accuracy : "
+    f"{original_accuracy * 100:.2f}%"
+)
+
+# ------------------------------------------------------------
+# Load compatible model
+# ------------------------------------------------------------
+
+print()
 print("Loading compatible H5 model...")
+
+if not COMPATIBLE_MODEL.exists():
+    raise FileNotFoundError(
+        f"Compatible model not found: {COMPATIBLE_MODEL}"
+    )
+
 compatible = tf.keras.models.load_model(
     COMPATIBLE_MODEL,
     compile=False,
 )
 
-print()
-print("Original output :", original.output_shape)
-print("Compatible output:", compatible.output_shape)
+print("Compatible model loaded.")
+print("Input shape :", compatible.input_shape)
+print("Output shape:", compatible.output_shape)
+
+# ------------------------------------------------------------
+# Compatible predictions
+# ------------------------------------------------------------
 
 print()
-print("Running predictions...")
+print("Running compatible-model predictions...")
 
-p_original = original.predict(
-    X_test,
-    verbose=0,
-)
-
-p_compatible = compatible.predict(
+compatible_predictions = compatible.predict(
     X_test,
     verbose=0,
 )
@@ -94,7 +144,7 @@ p_compatible = compatible.predict(
 max_diff = float(
     np.max(
         np.abs(
-            p_original - p_compatible
+            original_predictions - compatible_predictions
         )
     )
 )
@@ -102,18 +152,13 @@ max_diff = float(
 mean_diff = float(
     np.mean(
         np.abs(
-            p_original - p_compatible
+            original_predictions - compatible_predictions
         )
     )
 )
 
-original_pred = np.argmax(
-    p_original,
-    axis=1,
-)
-
 compatible_pred = np.argmax(
-    p_compatible,
+    compatible_predictions,
     axis=1,
 )
 
@@ -121,13 +166,13 @@ same_predictions = np.mean(
     original_pred == compatible_pred
 )
 
-original_accuracy = np.mean(
-    original_pred == y_test
-)
-
 compatible_accuracy = np.mean(
     compatible_pred == y_test
 )
+
+# ------------------------------------------------------------
+# Results
+# ------------------------------------------------------------
 
 print()
 print("=" * 70)
@@ -166,5 +211,7 @@ if (
     and same_predictions == 1.0
 ):
     print("PASS: Models are prediction-equivalent.")
-else:
-    print("FAIL: Model conversion changed predictions.")
+    raise SystemExit(0)
+
+print("FAIL: Model conversion changed predictions.")
+raise SystemExit(1)
