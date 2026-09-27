@@ -323,3 +323,114 @@ Validate predictions on videos not used for training.
 Record important milestone results, final model metrics, dataset statistics, major decisions, and Git checkpoints.
 
 Do not record every temporary traceback or exploratory console output unless it becomes relevant to a final technical decision.
+
+15. Uploaded-Video Prediction
+
+Primary uploaded-video predictor:
+
+src/inference/predict_uploaded_video.py
+
+The predictor uses the established pipeline:
+
+video
+-> legacy 258-feature landmark extraction
+-> hand interpolation
+-> landmark normalization
+-> SequenceGenerator
+-> 60-frame sequence
+-> generalized 114-class model
+-> final prediction
+
+Representative raw INCLUDE uploaded-video tests:
+
+Dog   : 92.46% correct
+Cat   : 99.75% correct
+Clock : 99.95% correct
+Car   : 99.76% correct
+
+These tests were performed on videos whose ground-truth class was known from
+the INCLUDE dataset directory.
+
+16. Uploaded-Video Multi-Window Experiment
+
+A separate experimental implementation was created:
+
+src/inference/predict_uploaded_video_windows.py
+
+The experiment did not modify:
+
+src/inference/realtime.py
+
+and did not modify the trained generalized 114-class model.
+
+Experiment 1: consecutive 60-frame windows
+
+Sequence length : 60
+Window step     : 15
+
+Car test result:
+
+Car      : 2/4 windows, average confidence 47.31%
+Truck    : 1/4 window
+Computer : 1/4 window
+
+The approach was not adopted.
+
+Experiment 2: overlapping 75-frame temporal spans
+
+Sequence length : 60
+Source span     : 75
+Span step       : 15
+
+Each 75-frame source span was converted to a 60-frame sequence using
+SequenceGenerator before model prediction.
+
+Controlled tests:
+
+Car:
+    Car   : 2/4 windows, average confidence 97.49%
+    Truck : 2/4 windows
+    Final : Car
+
+Dog:
+    Dog      : 1/4 windows, 99.75%
+    Bicycle  : 1/4 windows, 53.56%
+    Shirt    : 2/4 windows, average 71.15%
+    Final    : Shirt (incorrect)
+
+Cat:
+    Cat : 1/1 windows, 99.75%
+    Final : Cat
+
+Clock:
+    Clock : 2/2 windows, average 99.95%
+    Final : Clock
+
+Decision:
+
+Multi-window aggregation was NOT adopted as the primary uploaded-video
+inference method.
+
+The Dog test demonstrated that majority-window aggregation can override a
+strong correct prediction from the established full-video sampling approach.
+
+The original predict_uploaded_video.py remains the primary uploaded-video
+inference implementation.
+
+The multi-window implementation is retained as experimental work for
+possible future investigation.
+
+No retraining was performed as a result of these experiments.
+
+17. Current Project Stage
+
+The generalized 114-class model and uploaded-video prediction pipeline have
+been validated on representative raw INCLUDE videos.
+
+The next work should focus on documenting/committing the validated project
+checkpoint and then proceeding to further validation or the next planned
+project stage.
+
+The experimental multi-window inference should remain separate and should
+not replace the established uploaded-video predictor without broader
+validation.
