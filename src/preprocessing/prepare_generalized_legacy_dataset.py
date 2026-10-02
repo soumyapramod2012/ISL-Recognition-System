@@ -170,8 +170,8 @@ def make_split(combined):
 
     for label in sorted(combined):
         paths = sorted(
-            OUTPUT_ROOT / label / file.name
-            for _, file in combined[label]
+            OUTPUT_ROOT / label / f"{source_name}__{file.name}"
+            for source_name, file in combined[label]
         )
 
         rng.shuffle(paths)
