@@ -1,0 +1,21 @@
+Indian Sign Language Recognition Project
+Environment: venv_mp_legacy
+
+Python: 3.11.9
+MediaPipe: 0.10.21
+TensorFlow: 2.15.1
+Keras: 2.15.0
+NumPy: 1.26.4
+OpenCV: 4.11.0.86
+
+MediaPipe import: OK
+TensorFlow import: OK
+
+pip check:
+WARNING - mediapipe 0.10.21 requires jax, which is not installed.
+WARNING - mediapipe 0.10.21 requires jaxlib, which is not installed.
+
+Decision:
+JAX/JAXLIB were not installed because the validated project pipeline
+successfully operates without them. The environment is being frozen
+in its validated state rather than modified after final validation.
